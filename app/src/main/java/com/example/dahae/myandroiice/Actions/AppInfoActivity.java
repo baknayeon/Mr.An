@@ -23,7 +23,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.dahae.myandroiice.MainActivity;
-import com.example.dahae.myandroiice.NewPlan.NewPlanAction;
 import com.example.dahae.myandroiice.R;
 
 public class AppInfoActivity extends Activity {
@@ -37,7 +36,7 @@ public class AppInfoActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_app_info);
+		setContentView(R.layout.action_app_info);
 
 		mLoadingContainer = findViewById(R.id.loading_container);
 		mListView = (ListView) findViewById(R.id.listView1);
@@ -138,7 +137,7 @@ public class AppInfoActivity extends Activity {
 				LayoutInflater inflater = (LayoutInflater) mContext
 						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-				convertView = inflater.inflate(R.layout.list_item_layout, null);
+				convertView = inflater.inflate(R.layout.item_app, null);
 				holder.mIcon = (ImageView) convertView
 						.findViewById(R.id.app_icon);
 				holder.mName = (TextView) convertView
@@ -179,7 +178,7 @@ public class AppInfoActivity extends Activity {
 			 * AppFilter filter; switch (MENU_MODE) { case MENU_DOWNLOAD: filter
 			 * = AppInfo.THIRD_PARTY_FILTER; bre:ak; default filter = null;
 			 * break; }
-			 * 
+			 *
 			 * if (filter != null) { filter.init(); }
 			 */
 

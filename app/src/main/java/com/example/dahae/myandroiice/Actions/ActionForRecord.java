@@ -1,13 +1,8 @@
 package com.example.dahae.myandroiice.Actions;
 
 import android.app.Activity;
-import android.app.Service;
-import android.content.Intent;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Environment;
-import android.os.IBinder;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,7 +11,6 @@ import android.os.Bundle;
 
 import com.example.dahae.myandroiice.R;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Timer;
@@ -29,26 +23,27 @@ public class ActionForRecord extends Activity {
     String FileName =
             "/IceTest_"
                     + calendar.get(Calendar.YEAR) % 100 +"."+ (calendar.get(Calendar.MONTH)+1) +"."+calendar.get(Calendar.DAY_OF_MONTH) +"_"+ calendar.get(Calendar.HOUR_OF_DAY)
-                    +"."+calendar.get(Calendar.MINUTE)+"."+ calendar.get(Calendar.SECOND)
+                    +"."+calendar.get(Calendar.MINUTE)
                     +".m4a";
 
-    String RECORDED_FILE= mRootPath + "/Sounds" + FileName;
+    String RECORDED_FILE= mRootPath + "/" +
+            "Voice Recorder" + FileName;
 
     MediaRecorder recorder;
 
     Timer timer = new Timer();
     int count;
 
-    Button Stoprecode;
+    Button stopRecode;
     TextView time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_record);
+        setContentView(R.layout.action_record_voice);
 
-        Stoprecode = (Button) findViewById(R.id.Stoprecode);
-        time = (TextView) findViewById(R.id.textView);
+        stopRecode = (Button) findViewById(R.id.Stoprecode);
+        time = (TextView) findViewById(R.id.textViewSyntaxTrigger);
 
         startRecording();
         count = 0;
@@ -66,15 +61,34 @@ public class ActionForRecord extends Activity {
             }
         }, 1000, 1000 );
 
+        stopRecode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onClickedStop();
+            }
+        });
+
     }
 
-    public void onClickedStop(){
+    protected void onPause() {
         if (recorder != null) {
-            recorder.stop();
             recorder.release();
             recorder = null;
         }
+
+        super.onPause();
+    }
+
+    public void onClickedStop(){
+        if (recorder == null)
+            return ;
+        recorder.stop();
+        recorder.release();
+        recorder = null;
+
+        Toast.makeText(getApplicationContext(), "save Recording", Toast.LENGTH_LONG).show();
         timer.cancel();
+        finish();
     }
 
     @Override
@@ -84,7 +98,7 @@ public class ActionForRecord extends Activity {
     }
 
     private void startRecording() {
-        try {
+
             if (recorder != null) {
                 recorder.stop();
                 recorder.release();
@@ -99,7 +113,7 @@ public class ActionForRecord extends Activity {
             recorder.setOutputFile(RECORDED_FILE);
 
             Toast.makeText(getApplicationContext(), "start Recording", Toast.LENGTH_LONG).show();
-
+        try {
             recorder.prepare();
             recorder.start();
 

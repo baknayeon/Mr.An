@@ -7,6 +7,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.example.dahae.myandroiice.MainActivity;
+
 import java.io.IOException;
 
 class ActionForCameraSurface extends SurfaceView implements SurfaceHolder.Callback {
@@ -20,13 +22,16 @@ class ActionForCameraSurface extends SurfaceView implements SurfaceHolder.Callba
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
+
         try {
             if(mCamera == null) {
                 mCamera = Camera.open();
-                mCamera.setPreviewDisplay(mHolder);
+                mCamera.setDisplayOrientation(90);
             }
         } catch (Exception e) {
-
+            Log.i(MainActivity.TAG, e.toString());
+            mCamera.release();
+            mCamera = null;
         }
     }
 

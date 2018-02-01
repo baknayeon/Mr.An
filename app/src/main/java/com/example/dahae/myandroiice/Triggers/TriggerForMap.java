@@ -46,7 +46,7 @@ public class TriggerForMap extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map);
+        setContentView(R.layout.trigger_map);
 
         Log.d(MainActivity.TAG, "hi map");
 
@@ -130,9 +130,7 @@ public class TriggerForMap extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+
 
         return super.onOptionsItemSelected(item);
     }

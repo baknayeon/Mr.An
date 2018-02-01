@@ -1,20 +1,14 @@
 package com.example.dahae.myandroiice.Adapter;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
-import android.view.LayoutInflater;
+import android.content.Intent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
-import android.widget.TextView;
 
 import com.example.dahae.myandroiice.MainActivity;
-import com.example.dahae.myandroiice.R;
+import com.example.dahae.myandroiice.MainFunction.CheckPlan;
 
 import java.util.ArrayList;
 
@@ -42,7 +36,7 @@ public class PlanAdapter extends BaseAdapter{
     }
 
     @Override
-    public Object getItem(int position) {
+    public PlanItem getItem(int position) {
         return  planList.get(position);
     }
 
@@ -54,19 +48,18 @@ public class PlanAdapter extends BaseAdapter{
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        PlanItemView view = null;
+        PlanView view = null;
 
         if(convertView == null){
-            view = new PlanItemView(context);
+            view = new PlanView(context);
         } else {
-            view = (PlanItemView) convertView;
+            view = (PlanView) convertView;
         }
 
         PlanItem list = planList.get(position);
         view.name.setText(list.getName());
         view.checkBox.setChecked(list.isSelected());
         view.checkBox.setTag(list);
-
         view.checkBox.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 CheckBox cb = (CheckBox) v;
@@ -77,6 +70,7 @@ public class PlanAdapter extends BaseAdapter{
                     MainActivity.databaseForRecordTime.execSQL("UPDATE ActivationInfoTable " +
                             "SET activation = 'true' " +
                             "WHERE planName = '" + planName + "';");
+                    context.startService( new Intent(context.getApplicationContext(), CheckPlan.class));
                 } else {
                     MainActivity.databaseForRecordTime.execSQL("UPDATE ActivationInfoTable " +
                             "SET activation = 'false' " +

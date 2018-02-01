@@ -24,7 +24,7 @@ public class ActionForTextToVoice extends Activity implements TextToSpeech.OnIni
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_voicechange);
+        setContentView(R.layout.action_voicechange);
 
         mText = (EditText) findViewById(R.id.editText1);
 

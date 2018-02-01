@@ -1,6 +1,5 @@
 package com.example.dahae.myandroiice.MainFunction;
 
-import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -9,11 +8,8 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.Cursor;
 import android.media.AudioManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
@@ -21,16 +17,15 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.example.dahae.myandroiice.Actions.ActionForCamera;
 import com.example.dahae.myandroiice.Actions.ActionForRecord;
-import com.example.dahae.myandroiice.Actions.ActionForScreen;
 import com.example.dahae.myandroiice.MainActivity;
 import com.example.dahae.myandroiice.R;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.StringTokenizer;
@@ -42,18 +37,15 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
 
     TextToSpeech mTts;
     String str="";
-    SharedPreferences pref;
-    SharedPreferences.Editor editor;
-    PowerManager.WakeLock mWakeLock;
     @Override
     public void onCreate() {
         super.onCreate();
 
         PowerManager powerManager = (PowerManager)this.getSystemService(Context.POWER_SERVICE);
-        mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MainActivity.TAG);
-        pref = getSharedPreferences("pref",
-                Activity.MODE_PRIVATE);
-        editor = pref.edit();
+        //mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MainActivity.TAG);
+//        pref = getSharedPreferences("pref",
+//                Activity.MODE_PRIVATE);
+//        editor = pref.edit();
     }
 
     @Override
@@ -64,32 +56,25 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
     @Override
     public void onStart(Intent intent, int startId) {
         super.onStart(intent, startId);
+
         if(intent != null) {
 
-            String actionNameFromIntent = intent.getStringExtra("actionName");
-            String actionInfoFromIntent = intent.getStringExtra("actionInfo");
+            String tableName = intent.getStringExtra("tableName");
+            Cursor cursor =  MainActivity.database.rawQuery("SELECT * FROM " + tableName + " where keyword_level = -1", null);
 
-            if (actionNameFromIntent.contains("/") || actionInfoFromIntent.contains("/")) {
+            while(cursor.moveToNext()){
+                String action = cursor.getString(1);
+                String actionInfo = cursor.getString(2);
 
-                StringTokenizer st = new StringTokenizer(actionNameFromIntent, "/");
-                StringTokenizer st2 = new StringTokenizer(actionInfoFromIntent, "/");
-                String actionInfo;
-
-                while (st.hasMoreTokens()) {
-                    String action = st.nextToken();
-
-                    if (st2.hasMoreTokens())
-                        actionInfo = st2.nextToken();
-                    else
-                        actionInfo = "";
-                    str = actionInfo;
-
-                    Action(action, actionInfo);
-                }
+                Log.d(MainActivity.TAG, "*My action " +action +"/ "+actionInfo);
+                Action(action, actionInfo);
             }
         }
         stopSelf();
+
+        Log.d(MainActivity.TAG, "*My action Stop");
     }
+
 
     public void Action(String actionName, String actionInfo) {
 
@@ -104,23 +89,18 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
              */
             if (actionName.toString().equals("WifiOn")) {
                 setWiFi(true);
-                Log.d(MainActivity.TAG, "*hi action WifiOn");
             } else if (actionName.toString().equals("WifiOff")) {
                 setWiFi(false);
-                Log.d(MainActivity.TAG, "*hi action WifiOff");
             } else if (actionName.toString().equals("Sound")) {
-                Log.d(MainActivity.TAG,"*hi action Sound");
                 aManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
             } else if (actionName.toString().equals("Vibration")) {
-                Log.d(MainActivity.TAG,"*hi action Vibration");
                 aManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
             } else if (actionName.toString().equals("Silence")) {
                 aManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-                Log.d(MainActivity.TAG, "*hi action Silence");
             } else if (actionName.toString().equals("DataOn")) {
-                setData(true);
+                setMobileDataState(true);
             } else if (actionName.toString().equals("DataOff")) {
-                setData(false);
+                setMobileDataState(false);
             } else if (actionName.toString().equals("BluetoothOn")) {
                 if (mBluetoothAdapter != null)
                     if (!mBluetoothAdapter.isEnabled())
@@ -139,19 +119,9 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
                 Log.d(MainActivity.TAG, "Camera");
 
                 Intent intent = new Intent(MyAction.this, ActionForCamera.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
-            }else if (actionName.toString().equals("Flash")) {
-                isCameraOn = pref.getBoolean("isCameraOn",false);
-
-                if(isCameraOn) {
-                    Log.d(MainActivity.TAG, "Flash OFF");
-                    if(mCamera == null) {
-                        mCamera.release();
-                        mCamera = null;
-                        editor.putBoolean("isCameraOn", false);
-                        editor.commit();
-                    }
-                }else {
+            }else if (actionName.toString().equals("FlashOn")) {
                     Log.d(MainActivity.TAG, "Flash ON");
                     try{
                        if(mCamera == null) {
@@ -161,11 +131,25 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
                            mCameraParameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_INFINITY);
                            mCamera.setParameters(mCameraParameters);
                            mCamera.startPreview();
-                           editor.putBoolean("isCameraOn", true);
-                           editor.commit();
+
                        }
                     }catch(Exception e) {
                         Log.e(MainActivity.TAG, "again "+e);}
+            }else if (actionName.toString().equals("FlashOff")) {
+                Log.d(MainActivity.TAG, "Flash Off");
+                try{
+                    if(mCamera == null) {
+                        mCamera = android.hardware.Camera.open();
+                        android.hardware.Camera.Parameters mCameraParameters = mCamera.getParameters();
+                        mCameraParameters.setFlashMode(android.hardware.Camera.Parameters.FLASH_MODE_TORCH);
+                        mCameraParameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_INFINITY);
+                        mCamera.setParameters(mCameraParameters);
+                        mCamera.startPreview();
+                        mCamera.release();
+                        mCamera = null;
+                    }
+                }catch(Exception e) {
+                    Log.e(MainActivity.TAG, "again "+e);
                 }
             }else if (actionName.toString().equals("Bookmark")){
                 Log.d(MainActivity.TAG, "Bookmark : " + actionInfo);
@@ -238,30 +222,34 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
             }else if (actionName.toString().equals("TellSMS")){
                 Log.d(MainActivity.TAG, "TellSMS " + actionInfo);
                 mTts = new TextToSpeech(getApplicationContext(), this);
-            } else if (actionName.toString().equals("ScreenOn")) {
-                Log.d(MainActivity.TAG, "ScreenOn");
-
-                Intent intentScreen = new Intent(this, ActionForScreen.class);
-                intentScreen.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intentScreen.putExtra("isScreen", true);
-                startActivity(intentScreen);
-            }else if (actionName.toString().equals("ScreenOff")){
-                if ((mWakeLock != null) &&           // we have a WakeLock
-                        (mWakeLock.isHeld() == false)) {  // but we don't hold it
-                    mWakeLock.acquire();
-                }
-            }else if (actionName.toString().equals("Plantrue")){
+            } else if (actionName.toString().equals("Plantrue")){
                 Log.d(MainActivity.TAG, "Plantrue");
-                PlanSetting(true , actionInfo);
+                PlanSetting(true, actionInfo);
             }else if (actionName.toString().equals("Planfalse")){
                 Log.d(MainActivity.TAG, "Planfalse");
                 PlanSetting(false, actionInfo);
             }
+
+
+
+//             if (actionName.toString().equals("ScreenOn")) {
+//                Log.d(MainActivity.TAG, "ScreenOn");
+//
+//                Intent intentScreen = new Intent(this, ActionForScreen.class);
+//                intentScreen.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                intentScreen.putExtra("isScreen", true);
+//                startActivity(intentScreen);
+//            }else if (actionName.toString().equals("ScreenOff")){
+//                if ((mWakeLock != null) &&           // we have a WakeLock
+//                        (mWakeLock.isHeld() == false)) {  // but we don't hold it
+//                    mWakeLock.acquire();
+//                }
+//            }
     }
 
     public void onDestroy() {
-        if (mWakeLock.isHeld())
-            mWakeLock.release();
+//        if (mWakeLock.isHeld())
+//            mWakeLock.release();
         super.onDestroy();
     }
 
@@ -279,28 +267,22 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
         else if ( !status && wifiManager.isWifiEnabled())
             wifiManager.setWifiEnabled(false);
     }
+    public void setMobileDataState(boolean mobileDataEnabled)
+    {
+        try
+        {
+            TelephonyManager telephonyService = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 
-    public void setData(boolean data){
+            Method setMobileDataEnabledMethod = telephonyService.getClass().getDeclaredMethod("setDataEnabled", boolean.class);
 
-        try {
-            // Wifi, setData detecting
-            ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo mobile = manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-            NetworkInfo wifi = manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
-            // setData-on/off setting
-            final ConnectivityManager conman = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            final Class conmanClass = Class.forName(conman.getClass().getName());
-            final Field connectivityManagerField = conmanClass.getDeclaredField("mService");
-            connectivityManagerField.setAccessible(true);
-            final Object connectivityManager = connectivityManagerField.get(conman);
-            final Class connectivityManagerClass = Class.forName(connectivityManager.getClass().getName());
-            final Method setMobileDataEnabledMethod = connectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-            setMobileDataEnabledMethod.setAccessible(true);
-
-            setMobileDataEnabledMethod.invoke(connectivityManager, data);
-        } catch (Exception e) {
-            e.getStackTrace();
+            if (null != setMobileDataEnabledMethod)
+            {
+                setMobileDataEnabledMethod.invoke(telephonyService, mobileDataEnabled);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.e(MainActivity.TAG, "Error setting mobile data state", ex);
         }
     }
 
@@ -323,18 +305,15 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
 
     public void PlanSetting(boolean SettingOfPlan , String planName){
 
-        DBHelperForRecordTime dbHelperForInfo = new DBHelperForRecordTime((getApplicationContext()));
-        SQLiteDatabase databaseForInfo = dbHelperForInfo.getWritableDatabase();
-
         try {
             if( SettingOfPlan){
-                if(databaseForInfo != null)
-                    databaseForInfo.execSQL("UPDATE ActivationInfoTable SET activation = 'true' " +
+                if(MainActivity.databaseForRecordTime != null)
+                    MainActivity.databaseForRecordTime.execSQL("UPDATE ActivationInfoTable SET activation = 'true' " +
                             "WHERE planName = '" + planName + "';");
             }
             else if( !SettingOfPlan) {
-                if (databaseForInfo != null)
-                    databaseForInfo.execSQL("UPDATE ActivationInfoTable SET activation = 'false' " +
+                if (MainActivity.databaseForRecordTime != null)
+                    MainActivity.databaseForRecordTime.execSQL("UPDATE ActivationInfoTable SET activation = 'false' " +
                             "WHERE planName = '" + planName + "';");
             }
         } catch (Exception e) {
@@ -348,7 +327,7 @@ public class MyAction extends Service implements TextToSpeech.OnInitListener {
         int i = Integer.parseInt(String.valueOf(Math.round(d)));
 
         NotificationManager nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification notification = new Notification(R.drawable.ic_launcher, "[ANDROI-ICE]", System.currentTimeMillis());
+        Notification notification = new Notification(R.drawable.anbisa, "[ANDROI-ICE]", System.currentTimeMillis());
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         notification.defaults = Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE ;
         notification.number = 5;

@@ -7,13 +7,40 @@
     tools:context="com.example.dahae.myandroiice.RecordTimeActivity">
 
 
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:text="기록삭제"
+        android:id="@+id/buttonNewplan"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginBottom="0dp"
+        android:background="#5a8eaa"/>
+
+
     <ListView
         android:id="@+id/recordTimeListView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
 
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/buttonNewplan" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="실행기록"
+        android:id="@+id/textViewSyntaxTrigger"
+        android:layout_above="@+id/recordTimeListView"
+        android:layout_alignParentStart="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginBottom="15dp" />
 
     <!--android:stackFromBottom="true"-->
 

@@ -1,0 +1,109 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="5">
+            <ListView
+                android:id="@+id/tree_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignParentTop="true"/>
+
+            <ImageButton
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonSpace"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/butspace"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:background="#7dbab7" />
+
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="4">
+            <LinearLayout
+                android:id="@+id/buttonLayout"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:weightSum="1"
+                android:layout_weight="0"
+                android:layout_margin="3dp"
+                android:layout_alignParentTop="true"
+                android:background="#ffffff">
+                <Button
+                    android:id="@+id/buttonAnd"
+                    android:text="And"
+                    android:layout_width="55dp"
+                    android:layout_height="35dp"
+                    android:textSize="10dp"
+                    android:background="@drawable/butsmallg"
+                    android:layout_margin="3dp" />
+                <Button
+                    android:id="@+id/buttonOr"
+                    android:layout_width="55dp"
+                    android:layout_height="35dp"
+                    android:text="Or"
+                    android:textSize="10dp"
+                    android:background="@drawable/butsmallg"
+                    android:layout_margin="3dp" />
+                <Button
+                    android:id="@+id/buttonDone"
+                    android:text="Done"
+                    android:layout_width="70dp"
+                    android:layout_height="35dp"
+                    android:textSize="10dp"
+                    android:background="@drawable/butsmallg"
+                    android:layout_margin="3dp" />
+            </LinearLayout>
+
+            <!--<ListView-->
+                <!--android:id="@+id/triggerListView"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="395dp"-->
+                <!--android:layout_below="@+id/buttonLayout"-->
+                <!--android:layout_above="@+id/buttonTriggerEnd" />-->
+
+            <ExpandableListView
+                android:layout_width="wrap_content"
+                android:layout_height="250dp"
+                android:id="@+id/expandableListView"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/buttonLayout"
+                android:layout_above="@+id/buttonTriggerEnd" />
+
+            <Button
+                android:id="@+id/buttonTriggerEnd"
+                android:text="완료"
+                android:textSize="20dp"
+                android:background="@drawable/butsmallg"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="false"
+                android:layout_height="50dp"
+                android:layout_width="match_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="5dp" />
+
+        </RelativeLayout>
+    </LinearLayout>
+
+</LinearLayout>

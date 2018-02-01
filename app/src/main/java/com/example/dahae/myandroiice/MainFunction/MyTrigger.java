@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -30,13 +29,23 @@ import com.example.dahae.myandroiice.MainActivity;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MyTrigger extends Service implements SensorEventListener {
+
+    Intent CheckPlan;
+
     private SensorManager sensorManager;
     private Sensor accelerormeterSensor;
     SensorManager mSm;
 
+    TimerTask mTask;
+    Timer  mTimer = new Timer();
+    int mCountLifeCycle = 3;
+
     String mTriggerInfo ="";
+
     int mCounter = 0;
     int mCounterCapture = 0;
     int mProxiCount = 0;
@@ -54,14 +63,19 @@ public class MyTrigger extends Service implements SensorEventListener {
 
     public void onCreate() {
         super.onCreate();
-        Log.d(MainActivity.TAG, "Trigger In onCreate");
 
-        /**
-         *         브로드캐스트로 받는것
-         */
+        mTask = new TimerTask() {
+            @Override
+            public void run() {
+                mCountLifeCycle++;
+                Log.d(MainActivity.TAG, "mCountLifeCycle " +mCountLifeCycle);
+            }
+        };
+        mTimer.schedule(mTask, 1000, 1000);
+        Log.d(MainActivity.TAG, "*My trigger onCreate()");
 
 //         SMS수신
-       registerReceiver(mybroadcastforComplex, new IntentFilter("android.provider.Telephony.SMS_RECEIVED"));
+        registerReceiver(mybroadcastforComplex, new IntentFilter("android.provider.Telephony.SMS_RECEIVED"));
 //         스크린
         registerReceiver(mybroadcastforComplex, new IntentFilter(Intent.ACTION_SCREEN_ON));
         registerReceiver(mybroadcastforComplex, new IntentFilter(Intent.ACTION_SCREEN_OFF));
@@ -99,21 +113,35 @@ public class MyTrigger extends Service implements SensorEventListener {
         mSm.registerListener(mSensorListener, mSm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
         mSm.registerListener(mSensorListener, mSm.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL);
 
+        StartCheckPlan("");
+    }
 
-        StartServiceAtFrist();
+    public void StartCheckPlan(String brodcastInfo){
+        if( mCountLifeCycle > 2) {
+            CheckPlan  = new Intent(getApplicationContext(), CheckPlan.class);
+            CheckPlan.putExtra("BrodcastInfo", brodcastInfo);
+            startService(CheckPlan);
+            mCountLifeCycle = 0;
+        }
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+
+        return START_REDELIVER_INTENT;
     }
 
     @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
-        StartServiceAtFrist();
-    }
-
-    // @Override
-    public void onStop() {
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mybroadcastforComplex);
+        mTimer.cancel();
         if (sensorManager != null)
             sensorManager.unregisterListener(this);
+        Log.d(MainActivity.TAG,"*My trigger OnDestroy");
     }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -167,9 +195,7 @@ public class MyTrigger extends Service implements SensorEventListener {
                             mCounter = 0;
                                 if (checkInBroadcast("SensorLR")) {
                                     Log.d(MainActivity.TAG, "SensorLR");
-
-                                    CheckPlan.putExtra("BrodcastInfo", "SensorLR");
-                                    startService(CheckPlan);
+                                    StartCheckPlan("SensorLR");
                                 }
                                 arValue.clear();
                         }
@@ -182,8 +208,7 @@ public class MyTrigger extends Service implements SensorEventListener {
                             if (checkInBroadcast("SensorUPDOWN")) {
 
                                 Log.d(MainActivity.TAG, "SensorUPDOWN");
-                                CheckPlan.putExtra("BrodcastInfo", "SensorUPDOWN");
-                                startService(CheckPlan);
+                                StartCheckPlan("SensorUPDOWN");
                             }
                         }
                         break;
@@ -192,8 +217,7 @@ public class MyTrigger extends Service implements SensorEventListener {
                     if (event.values[0] < 1 && event.values[1] < 1 && event.values[2] < -9 && event.values[0] > -1 && event.values[1] > -1) {
                         if (checkInBroadcast("UpsideDown")) {
                             Log.d(MainActivity.TAG, "UpsideDown");
-                            CheckPlan.putExtra("BrodcastInfo", "UpsideDown");
-                            startService(CheckPlan);
+                            StartCheckPlan("UpsideDown");
                         }
                         break;
                     }
@@ -205,8 +229,7 @@ public class MyTrigger extends Service implements SensorEventListener {
                         if (checkInBroadcast("SensorClose")) {
 
                             Log.d(MainActivity.TAG, "SensorClose / mProxiCount " + mProxiCount);
-                            CheckPlan.putExtra("BrodcastInfo", "SensorClose");
-                            startService(CheckPlan);
+                            StartCheckPlan("SensorClose");
                         }
                         mProxiCount = 0;
                     }
@@ -217,15 +240,13 @@ public class MyTrigger extends Service implements SensorEventListener {
                     float bright = event.values[0];
                     if(bright>0) {
                         if (bright < 20) {
-                            Log.d(MainActivity.TAG, "Sensor.TYPE_LIGHT " + bright);
+                            //Log.d(MainActivity.TAG, "Sensor.TYPE_LIGHT " + bright);
                             mCloseCount++;
                         }
                     }
                     if(mCloseCount == 3) {
                         if (checkInBroadcast("SensorBright")) {
-
-                            CheckPlan.putExtra("BrodcastInfo", "SensorBright");
-                            startService(CheckPlan);
+                            StartCheckPlan("SensorBright");
                         }
                         mCloseCount = 0;
                     }
@@ -234,12 +255,6 @@ public class MyTrigger extends Service implements SensorEventListener {
             }
         }
     };
-
-    public void StartServiceAtFrist(){
-
-        Intent CheckPlan  = new Intent(getApplicationContext(), CheckPlan.class);
-        startService(CheckPlan);
-    }
 
     BroadcastReceiver mybroadcastforComplex = new BroadcastReceiver() {
 
@@ -250,9 +265,8 @@ public class MyTrigger extends Service implements SensorEventListener {
 
             String action = intent.getAction();
             Bundle extras = intent.getExtras();
-            Log.e(MainActivity.TAG, "hi " + action);
+            Log.i(MainActivity.TAG, "hi " + action);
 
-            Intent CheckPlan  = new Intent(getApplicationContext(), CheckPlan.class);
             if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)) {
 
                 WifiManager m_WifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -261,14 +275,14 @@ public class MyTrigger extends Service implements SensorEventListener {
 
                         if (checkInBroadcast("WifiOff")) {
                             Log.i(MainActivity.TAG, "WifiOff");
-                            startService(CheckPlan);
+                            StartCheckPlan("WifiOff");
                         }
                         break;
                     case WifiManager.WIFI_STATE_ENABLING:
 
                         if (checkInBroadcast("WifiOn")) {
                             Log.i(MainActivity.TAG, "WifiOn");
-                            startService(CheckPlan);
+                            StartCheckPlan("WifiOn");
                         }
                         break;
                 }
@@ -277,16 +291,14 @@ public class MyTrigger extends Service implements SensorEventListener {
                 if (checkInBroadcast("ScreenOff")) {
                     Log.i(MainActivity.TAG, "Screen OFF");
 
-                    CheckPlan.putExtra("BrodcastInfo", "ScreenOff");
-                    startService(CheckPlan);
+                    StartCheckPlan("ScreenOff");
                 }
 
             } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
                 if (checkInBroadcast("ScreenOn")) {
                     Log.i(MainActivity.TAG, "Screen ON");
 
-                    CheckPlan.putExtra("BrodcastInfo", "ScreenOn");
-                    startService(CheckPlan);
+                    StartCheckPlan("ScreenOn");
                 }
 
             } else if (action.equals("android.media.RINGER_MODE_CHANGED")) {
@@ -294,16 +306,16 @@ public class MyTrigger extends Service implements SensorEventListener {
                 switch (am.getRingerMode()) {
                     case AudioManager.RINGER_MODE_NORMAL:
                         if (checkInBroadcast("Sound"))
-                            startService(CheckPlan);
+                            StartCheckPlan("Sound");
                         break;
                     case AudioManager.RINGER_MODE_SILENT:
                         if (checkInBroadcast("Silence"))
-                            startService(CheckPlan);
+                            StartCheckPlan("Silence");
 
                         break;
                     case AudioManager.RINGER_MODE_VIBRATE:
                         if (checkInBroadcast("Vibration"))
-                            startService(CheckPlan);
+                            StartCheckPlan("Vibration");
 
                         break;
                 }
@@ -314,12 +326,12 @@ public class MyTrigger extends Service implements SensorEventListener {
                 if (niMobile.getState() == NetworkInfo.State.CONNECTED) {
                     if (checkInBroadcast("DataOn")) {
                         Log.d(MainActivity.TAG, "Mobile CONNECTED");
-                        startService(CheckPlan);
+                        StartCheckPlan("Mobile CONNECTED");
                     }
                 } else if (niMobile.getState() == NetworkInfo.State.DISCONNECTED) {
                     if (checkInBroadcast("DataOff")) {
                         Log.d(MainActivity.TAG, "Mobile DISCONNECTED");
-                        startService(CheckPlan);
+                        StartCheckPlan("Mobile DISCONNECTED");
                     }
                 }
             } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
@@ -327,22 +339,22 @@ public class MyTrigger extends Service implements SensorEventListener {
                     case BluetoothAdapter.STATE_OFF:
                         if (checkInBroadcast("BluetoothOff")) {
                             Log.d(MainActivity.TAG, " false BluetoothAdapter STATE_OFF");
-                            startService(CheckPlan);
+                            StartCheckPlan("BluetoothOff");
                         }
                     case BluetoothAdapter.STATE_TURNING_OFF:
                         if (checkInBroadcast("BluetoothOff")) {
                             Log.d(MainActivity.TAG, " false BluetoothAdapter STATE_TURNING_OFF");
-                            startService(CheckPlan);
+                            StartCheckPlan("BluetoothOff");
                         }
                     case BluetoothAdapter.STATE_TURNING_ON:
                         if (checkInBroadcast("BluetoothOn")) {
                             Log.d(MainActivity.TAG, "True BluetoothAdapter STATE_TURNING_ON");//블루투스켜짐
-                            startService(CheckPlan);
+                            StartCheckPlan("BluetoothOn");
                         }
                     case BluetoothAdapter.STATE_ON:
                         if (checkInBroadcast("BluetoothOn")) {
                             Log.d(MainActivity.TAG, "True BluetoothAdapter STATE_ON");//블루투스켜짐
-                            startService(CheckPlan);
+                            StartCheckPlan("BluetoothOn");
                         }
                 }
             } else if (action.equals("android.provider.Telephony.SMS_RECEIVED")) {
@@ -367,10 +379,13 @@ public class MyTrigger extends Service implements SensorEventListener {
                     String message = smsMessage[0].getMessageBody().toString();
                     Log.i(MainActivity.TAG, "SMS : " + origNumber + ", " + message);
 
+                    Intent CheckPlan  = new Intent(getApplicationContext(), CheckPlan.class);
                     CheckPlan.putExtra("OrigNumber", origNumber);
                     CheckPlan.putExtra("Message", message);
                     CheckPlan.putExtra("BrodcastInfo", "SMSreceiver");
                     startService(CheckPlan);
+
+
                 }
             } else if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
                 boolean enabling = Settings.System.getInt(context.getContentResolver(), Settings.System.AIRPLANE_MODE_ON, 0) != 0;
@@ -379,14 +394,14 @@ public class MyTrigger extends Service implements SensorEventListener {
                 if (checkInBroadcast("AirplaneModeOn")) {
                     if (enabling = true) {
                         Log.d(MainActivity.TAG, "AirplaneModeOn");
-                        startService(CheckPlan);
+                        StartCheckPlan("AirplaneModeOn");
                     }
                 }
                 //비행기 모드 Off
                 if (checkInBroadcast("AirplaneModeOff")) {
                     if (enabling = false) {
                         Log.d(MainActivity.TAG, "AirplaneModeOff");
-                        startService(CheckPlan);
+                        StartCheckPlan("AirplaneModeOff");
                     }
                 }
 
@@ -396,18 +411,16 @@ public class MyTrigger extends Service implements SensorEventListener {
                 if(state.equals(TelephonyManager.EXTRA_STATE_IDLE)){
                     if(checkInBroadcast("CallEnded")) {
                         Log.d(MainActivity.TAG, " EXTRA_STATE_IDLE ");
-                        CheckPlan.putExtra("BrodcastInfo", "CallEnded");
-                        startService(CheckPlan);
+                        StartCheckPlan("CallEnded");
                     }
                 }else if(state.equals(TelephonyManager.EXTRA_STATE_RINGING)){
 
                     Log.d(MainActivity.TAG, "Telephony Manager.EXTRA_STATE_RINGING");
-                    if(checkInBroadcast("PhoneReception")) {
+                    if(checkInBroadcast("CallReception")) {
                         if(mTriggerInfo.equals(extras.getString(TelephonyManager.EXTRA_INCOMING_NUMBER))) {
 
                             Log.d(MainActivity.TAG, " EXTRA_STATE_RINGING INCOMMING NUMBER : " + extras.getString(TelephonyManager.EXTRA_INCOMING_NUMBER));
-                            CheckPlan.putExtra("BrodcastInfo", "PhoneReception");
-                            startService(CheckPlan);
+                            StartCheckPlan("CallReception");
                         }
                     }
                 }else if(state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)){
@@ -415,35 +428,34 @@ public class MyTrigger extends Service implements SensorEventListener {
                 }
             } else if(action.equals(Intent.ACTION_NEW_OUTGOING_CALL)){
                 if (checkInBroadcast("NewOutgoingCall")) {
-                    CheckPlan.putExtra("BrodcastInfo", "NewOutgoingCall");
+                    StartCheckPlan("NewOutgoingCall");
                     Log.d(MainActivity.TAG, " OUTGOING CALL : " + extras.getString(Intent.EXTRA_PHONE_NUMBER));
                 }
             } else if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
                 //배터리충전
                 if (checkInBroadcast("PowerConnected")) {
                     Log.d(MainActivity.TAG, "ACTION_POWER_CONNECTED");
-                    startService(CheckPlan);
+                    StartCheckPlan("PowerConnected");
                 }
             } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
 
                 //배터리충전끝
                 if (checkInBroadcast("PowerDisConnected")) {
                     Log.d(MainActivity.TAG, "ACTION_POWER_DISCONNECTED");
-                    startService(CheckPlan);
+                    StartCheckPlan("PowerDisConnected");
                 }
             } else if (action.equals(intent.ACTION_HEADSET_PLUG)) {
                 switch (extras.getInt("state")) {
                     case 1:
                         if((checkInBroadcast("EarphoneIn"))) {
                             Log.d(MainActivity.TAG, "ACTION_HEADSET_PLUG (IN) DETECTED");
-
-                            startService(CheckPlan);
+                            StartCheckPlan("EarphoneIn");
                         }
                         break;
                     case 0:
                         if(checkInBroadcast("EarphoneOut")) {
                             Log.d(MainActivity.TAG, "ACTION_HEADSET_PLUG (OUT) DETECTED");
-                            startService(CheckPlan);
+                            StartCheckPlan("EarphoneOut");
                         }
                         break;
                 }
@@ -451,7 +463,7 @@ public class MyTrigger extends Service implements SensorEventListener {
 
                 if(checkInBroadcast("Booted")) {
                     Log.d(MainActivity.TAG, "ACTION_BOOT_COMPLETED");
-                    startService(CheckPlan);
+                    StartCheckPlan("Booted");
                 }
             } else if (action.equals(Intent.ACTION_BATTERY_CHANGED)){
 
@@ -462,11 +474,11 @@ public class MyTrigger extends Service implements SensorEventListener {
 
                 if (checkInBroadcast("LowBattery")) {
                     if(bat < Integer.parseInt(mTriggerInfo))
-                        startService(CheckPlan);
+                        StartCheckPlan("LowBattery");
                 }
                 if (checkInBroadcast("FullBattery")) {
                     if (bat > Integer.parseInt(mTriggerInfo))
-                        startService(CheckPlan);
+                        StartCheckPlan("FullBattery");
                 }
             }
         }
@@ -474,55 +486,65 @@ public class MyTrigger extends Service implements SensorEventListener {
 
     public boolean checkInBroadcast(String triggerName){
 
-        DBHelperForPlan mHelperCheckBroadcast = new DBHelperForPlan(this);
-        SQLiteDatabase databaseCB = mHelperCheckBroadcast.getWritableDatabase();
-
         String tableNameDB;
         boolean result = false;
-        Cursor cursorT = databaseCB.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+
         try {
-            // 모든 테이블 목록(플랜 목록) 보여주기
-            if( databaseCB != null){
-                if ( cursorT != null ) {
-                    while (cursorT.moveToNext()) {
-                        tableNameDB = cursorT.getString(0);
-                        if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
-                            if(triggerName != null && tableNameDB != null) {
-                                if (check(triggerName, tableNameDB)) {
-                                    return true;
-                                }}}}}}
-        } finally {
-            if(cursorT != null)
-                cursorT.close();
+            Cursor cursor =  MainActivity.database.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+
+            try {
+                // 모든 테이블 목록(플랜 목록) 보여주기
+                if (MainActivity.database != null) {
+                    if (cursor != null) {
+                        while (cursor.moveToNext()) {
+                            tableNameDB = cursor.getString(0);
+                            if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
+                                if (triggerName != null && tableNameDB != null) {
+                                    if (check(triggerName, tableNameDB)) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }finally {
+                if(cursor != null)
+                    cursor.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return result;
     }
 
-    public boolean check(String name, String tableNameDB){
-
-        DBHelperForPlan mHelperCheckBroadcast = new DBHelperForPlan(this);
-        SQLiteDatabase databaseCB = mHelperCheckBroadcast.getWritableDatabase();
+    public boolean check(String trigger, String tableNameDB){
 
         boolean result = false;
-        Cursor CursorCheck = databaseCB.rawQuery("SELECT * FROM " + tableNameDB, null);
         try {
-            if( databaseCB != null) {
-                if ( CursorCheck != null) {
-                    while (CursorCheck.moveToNext()) {
-                        if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
-                            String triggerNameCheck = CursorCheck.getString(1);
-                            int level_id = CursorCheck.getInt(3);
-                            if (name.equals("LowBattery") || name.equals("FullBattery") || name.equals("PhoneReception"))
-                                mTriggerInfo = CursorCheck.getString(2);
-                            if(triggerNameCheck != null) {
-                                if (level_id != -1) {
-                                    if (triggerNameCheck.equals(name)) {
-                                        return true;
-                                    }
-                                }}}}}}
-        } finally {
-            if(CursorCheck != null)
-                CursorCheck.close();
+            Cursor CursorCheck = MainActivity.database.rawQuery("SELECT * FROM " + tableNameDB, null);
+            try {
+                if( MainActivity.database != null) {
+                    if ( CursorCheck != null) {
+                        while (CursorCheck.moveToNext()) {
+                            if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
+                                String keywordInDB = CursorCheck.getString(1);
+                                int level_id = CursorCheck.getInt(3);
+
+                                if (trigger.equals("LowBattery") || trigger.equals("FullBattery") || trigger.equals("CalleReception"))
+                                    mTriggerInfo = CursorCheck.getString(2);
+                                if(keywordInDB != null) {
+                                    if (level_id != -1) {
+                                        if (keywordInDB.equals(trigger)) {
+                                            return true;
+                                        }
+                                    }}}}}}
+            } finally {
+                if(CursorCheck != null)
+                    CursorCheck.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return result;
     }

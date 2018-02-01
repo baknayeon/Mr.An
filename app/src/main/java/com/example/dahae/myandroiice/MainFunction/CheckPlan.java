@@ -20,9 +20,11 @@ import com.example.dahae.myandroiice.MainActivity;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.StringTokenizer;
 
 public class CheckPlan extends Service {
 
@@ -37,56 +39,54 @@ public class CheckPlan extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        return super.onStartCommand(intent, flags, startId);
-    }
-
-    @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
         if( intent != null) {
             BrodcastInfo = intent.getStringExtra("BrodcastInfo");
             OrigNumber = intent.getStringExtra("OrigNumber");
             Message = intent.getStringExtra("Message");
 
-            Log.d(MainActivity.TAG+"OnStart",BrodcastInfo+ " /"+ OrigNumber+ " /" +Message);
+            Log.d(MainActivity.TAG, "*CheckPlan "+BrodcastInfo+ " /"+ OrigNumber+ " /" +Message);
             checkPlan();
         }
+
+        Log.d(MainActivity.TAG, "*CheckPlan Stop");
+        this.stopSelf();
+        return super.onStartCommand(intent, flags, startId);
     }
 
     //checking Table name
     public void checkPlan(){
-//
-//        DBHelperForPlan mHelper= new DBHelperForPlan(this);
-//        SQLiteDatabase dbcheckName = mHelper.getWritableDatabase();
-//        DBHelperForRecordTime mInfoHelper = new DBHelperForRecordTime(this);
-//        SQLiteDatabase databaseForInfo = mInfoHelper.getWritableDatabase();
 
-        Cursor cursorT = MainActivity.database.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
-        Cursor cursorActivation = MainActivity.databaseForRecordTime.rawQuery("SELECT * FROM ActivationInfoTable", null);
-        try{
-            if(cursorT != null) {
-                if (cursorT.moveToFirst()) {
-                    while ( !cursorT.isAfterLast() ) {
-                        String tableNameDB = cursorT.getString(0);
-                        if (tableNameDB != null) {
-                            if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
-                                for (int i = 0; i < cursorActivation.getCount(); i++) {
-                                    //if (cursorActivation != null) {
-                                    if (cursorActivation.moveToNext()) {
-                                        String planNameInfo = cursorActivation.getString(1);
-                                        String activationInfo = cursorActivation.getString(2);
+        try {
+            Cursor cursorT = MainActivity.database.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+            Cursor cursorActivation = MainActivity.databaseForRecordTime.rawQuery("SELECT * FROM ActivationInfoTable", null);
 
-                                        if(planNameInfo.equals(tableNameDB) && activationInfo.equals("true")){
-                                            String query = "SELECT * FROM " + tableNameDB + " where Keyword_level = 0";
-                                            ComplexPlan(0, query, "empty", tableNameDB);
-                                        }}}//}
-                                cursorActivation.moveToFirst();
-                            }
-                            cursorT.moveToNext();
-                        }}}}
-        }finally {
-            if(cursorT != null) cursorT.close();
-            if(cursorActivation != null) cursorActivation.close();
+            try{
+                if(cursorT != null) {
+                    if (cursorT.moveToFirst()) {
+                        while ( !cursorT.isAfterLast() ) {
+                            String tableNameDB = cursorT.getString(0);
+                            if (tableNameDB != null) {
+                                if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
+                                    for (int i = 0; i < cursorActivation.getCount(); i++) {
+                                        if (cursorActivation != null) {
+                                            if (cursorActivation.moveToNext()) {
+                                                String planNameInfo = cursorActivation.getString(1);
+                                                String activationInfo = cursorActivation.getString(2);
+                                                if(planNameInfo.equals(tableNameDB) && activationInfo.equals("true")){
+                                                    String query = "SELECT * FROM " + tableNameDB + " where Keyword_level = 0";
+                                                    Log.d(MainActivity.TAG, "TableNameDB" + tableNameDB);
+                                                    ComplexPlan(0, query, "empty", tableNameDB);
+                                                }}}}
+                                    cursorActivation.moveToFirst();
+                                }
+                                cursorT.moveToNext();
+                            }}}}
+            }finally {
+                if(cursorT != null) cursorT.close();
+                if(cursorActivation != null) cursorActivation.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -95,129 +95,130 @@ public class CheckPlan extends Service {
         List listDone = new ArrayList();
 
         boolean result = false;
-//        DBHelperForPlan mHelperForComplex = new DBHelperForPlan(this);
-//        SQLiteDatabase dbForComplex = mHelperForComplex.getWritableDatabase();
-
-        Cursor cursorForComplex =  MainActivity.database.rawQuery(query, null);
-        Cursor cursorForComplex2 =  MainActivity.database.rawQuery(query, null);
-        cursorForComplex2.moveToFirst();
-
         try {
-            if (cursorForComplex != null && cursorForComplex2 != null) {
-                for (int j = 0; j < cursorForComplex.getCount(); j++) {
-                    if (!cursorForComplex2.moveToNext())
-                        cursorForComplex2.moveToLast();
+            Cursor cursorForComplex =  MainActivity.database.rawQuery(query, null);
+            Cursor cursorForComplex2 =  MainActivity.database.rawQuery(query, null);
+            cursorForComplex2.moveToFirst();
 
-                    if (cursorForComplex.moveToNext()) {
-                        int idNumberForComplex = cursorForComplex.getInt(0);
-                        String triggerNameForComplex = cursorForComplex.getString(1);
-                        int level_idForComplex = cursorForComplex.getInt(3);
-                        int idNumberForComplex_Next = cursorForComplex2.getInt(0);
+            try {
+                if (cursorForComplex != null && cursorForComplex2 != null) {
+                    for (int j = 0; j < cursorForComplex.getCount(); j++) {
+                        if (!cursorForComplex2.moveToNext())
+                            cursorForComplex2.moveToLast();
 
-                        if (triggerNameForComplex.equals("And")) {
-                            i++;
-                            query = "SELECT * FROM " + tableName + " where _id between " + idNumberForComplex + " and " + idNumberForComplex_Next + " and keyword_level = " + i; //두 커서 사이의 levelid가 i인것을 찾아라
-                            result = ComplexPlan(i, query, "And", tableName);
-                            i--;
-                            listDone.add(result);
-                        } else if (triggerNameForComplex.equals("Or")) {
-                            i++;
-                            query = "SELECT * FROM " + tableName + " where _id between " + idNumberForComplex + " and " + idNumberForComplex_Next + " and keyword_level = " + i;
-                            result = ComplexPlan(i, query, "Or",tableName);
-                            i--;
-                            listDone.add(result);
-                        } else if (triggerNameForComplex.equals("Done")) {
-                            Iterator iterator = listDone.iterator();
-                            if (Complex.equals("And")) {
-                                while (iterator.hasNext()){
-                                    Boolean and = (Boolean) iterator.next();
+                        if (cursorForComplex.moveToNext()) {
+                            int idNumberForComplex = cursorForComplex.getInt(0);
+                            String triggerNameForComplex = cursorForComplex.getString(1);
+                            int level_idForComplex = cursorForComplex.getInt(3);
+                            int idNumberForComplex_Next = cursorForComplex2.getInt(0);
 
-                                    if (and)
-                                        result = true;
-                                    else {
-                                        result = false;
-                                        break;
+                            if (triggerNameForComplex.equals("And")) {
+
+                                i++;
+                                query = "SELECT * FROM " + tableName + " where _id between " + idNumberForComplex + " and " + idNumberForComplex_Next + " and keyword_level = " + i; //두 커서 사이의 levelid가 i인것을 찾아라
+                                result = ComplexPlan(i, query, "And", tableName);
+                                i--;
+                                listDone.add(result);
+                            } else if (triggerNameForComplex.equals("Or")) {
+
+                                i++;
+                                query = "SELECT * FROM " + tableName + " where _id between " + idNumberForComplex + " and " + idNumberForComplex_Next + " and keyword_level = " + i;
+                                result = ComplexPlan(i, query, "Or",tableName);
+                                i--;
+                                listDone.add(result);
+                            } else if (triggerNameForComplex.equals("Done")) {
+                                Iterator iterator = listDone.iterator();
+                                if (Complex.equals("And")) {
+                                    while (iterator.hasNext()){
+                                        Boolean and = (Boolean) iterator.next();
+
+                                        if (and)
+                                            result = true;
+                                        else {
+                                            result = false;
+                                            break;
+                                        }
                                     }
-                                }
-                                if (i != 0)
-                                   return result;
+                                    if (i != 0)
+                                       return result;
 
-                            } else if (Complex.equals("Or")) {
-                                while (iterator.hasNext()){
-                                    Boolean or = (Boolean) iterator.next();
+                                } else if (Complex.equals("Or")) {
+                                    while (iterator.hasNext()){
 
-                                    if (or) {
-                                        result = true;
-                                        break;
-                                    } else {
-                                        result = false;
-
+                                        Boolean or = (Boolean) iterator.next();
+                                        if (or) {
+                                            result = true;
+                                            break;
+                                        }else
+                                            result = false;
                                     }
-                                }
-                                if (i != 0)
-                                    return result;
-                            } else {
-                                if (iterator.hasNext()) {
-                                    if ((Boolean) iterator.next()){
-                                        result = true;
-                                    } else {
-                                        result = false;
-                                    }
-                                }
-                            }
-                        } else if (triggerNameForComplex.equals("End")) {
-                            Iterator iterator = listDone.iterator();
-                            Boolean finalresult = (Boolean) iterator.next();
-
-                            listDone.clear();
-                            Log.d(MainActivity.TAG, "***FINAL End Result : " + finalresult);
-
-                            if (finalresult == true) {
-
-                                query = "SELECT * FROM " + tableName + " where Keyword_level = -1";
-                                Cursor cursorForActionIntent =  MainActivity.database.rawQuery(query, null);
-                                cursorForActionIntent.moveToFirst();
-
-                                String actionNameForIntent = cursorForActionIntent.getString(1);
-                                String actionInfoForIntent = cursorForActionIntent.getString(2);
-
-                                if (actionInfoForIntent.equals(null))
-                                    actionInfoForIntent = "empty";
-                                else if (actionNameForIntent.equals("TellPhoneNum"))
-                                    actionInfoForIntent = OrigNumber;
-                                else if (actionNameForIntent.equals("TellSMS"))
-                                    actionInfoForIntent = Message;
-
-                                if (actionNameForIntent != null) {
-                                    getCurrentTime(tableName);
-                                    Intent action = new Intent(this, MyAction.class);
-                                    action.putExtra("actionName", actionNameForIntent);
-                                    action.putExtra("actionInfo", actionInfoForIntent);
-                                    startService(action);
+                                    if (i != 0)
+                                        return result;
                                 } else {
-                                    Log.e(MainActivity.TAG, "%ERROR");
-                                }
-                            }
-                            return result;
+                                    if (iterator.hasNext()) {
 
-                        } else {
-                            if (checkTrigger(idNumberForComplex, tableName)) {
-                                Log.d(MainActivity.TAG, "* trigger true" + triggerNameForComplex + " IN DB ;" + level_idForComplex);
-                                result = true;
+                                        if ((Boolean) iterator.next())
+                                            result = true;
+                                        else
+                                            result = false;
+                                    }
+                                }
+                            } else if (triggerNameForComplex.equals("End")) {
+                                Iterator iterator = listDone.iterator();
+                                Boolean finalresult = (Boolean) iterator.next();
+
+                                listDone.clear();
+                                Log.d(MainActivity.TAG, "***FINAL End Result : " + finalresult);
+
+                                if (finalresult == true) {
+
+                                    query = "SELECT * FROM " + tableName + " where keyword_level = -1";
+                                    Cursor c =  MainActivity.database.rawQuery(query, null);
+                                    for(int k =0; k < c.getCount(); k++) {
+                                        c.moveToNext();
+                                        String actionName = c.getString(1);
+                                        if (actionName.equals("TellPhoneNum"))
+                                            MainActivity.databaseForRecordTime.execSQL("UPDATE " + tableName +
+                                                    " SET Keyword_Info = '" + String.valueOf(OrigNumber) + "'" +
+                                                    " WHERE Keyword2 = 'TellPhoneNum'");
+
+                                        else if (actionName.equals("TellSMS"))
+                                            MainActivity.databaseForRecordTime.execSQL("UPDATE " + tableName +
+                                                    " SET Keyword_Info = '" + Message + "'" +
+                                                    " WHERE Keyword2 = 'TellPhoneNum'");
+
+                                    }
+                                    if (c.getCount() != 0) {
+                                        getCurrentTime(tableName);
+                                        Intent action = new Intent(this, MyAction.class);
+                                        action.putExtra("tableName", tableName);
+                                        startService(action);
+                                    } else
+                                        Log.e(MainActivity.TAG, "%ERROR");
+                                }
+                                return result;
+
                             } else {
-                                Log.d(MainActivity.TAG, "* trigger false" + triggerNameForComplex + "IN DB ;" + level_idForComplex);
-                                result = false;
+                                if (checkTrigger(idNumberForComplex, tableName)) {
+                                    Log.d(MainActivity.TAG, "*trigger true " + triggerNameForComplex + " level is " + level_idForComplex);
+                                    result = true;
+                                } else {
+                                    Log.d(MainActivity.TAG, "*trigger false " + triggerNameForComplex + " level is " + level_idForComplex);
+                                    result = false;
+                                }
+                                listDone.add(result);
                             }
-                            listDone.add(result);
                         }
                     }
                 }
+            }finally {
+                if( cursorForComplex != null)
+                    cursorForComplex.close();
+                if( cursorForComplex2 != null)
+                    cursorForComplex2.close();
             }
-        }finally {
-            if( cursorForComplex != null)
-                cursorForComplex.close();
-            if( cursorForComplex2 != null)
-                cursorForComplex2.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return result;
     }
@@ -226,12 +227,10 @@ public class CheckPlan extends Service {
     public boolean checkTrigger(int num, String tableNameDB){
 
         float result_Brightness ;
-        boolean result =false;
+        boolean result = false;
 
         try {
 
-//            DBHelperForPlan mHelperForComplex = new DBHelperForPlan(this);
-//            SQLiteDatabase dbForComplex = mHelperForComplex.getWritableDatabase();
             if( MainActivity.database != null) {
 
                 if (!tableNameDB.equals("android_metadata") && !tableNameDB.equals("sqlite_sequence")) {
@@ -324,37 +323,16 @@ public class CheckPlan extends Service {
 
                                         } else if (triggerName.equals("Location")) {
                                             Log.d(MainActivity.TAG, "Location");
-                                        } else if (triggerName.equals("Time")) {
-                                            if (BrodcastInfo.equals("Time"))
-                                                result = true;
-                                        } else if (triggerName.equals("ScreenOff")) {
-                                            if (BrodcastInfo.equals("ScreenOff"))
-                                                result = true;
-                                        } else if (triggerName.equals("ScreenOn")) {
-                                            if (BrodcastInfo.equals("ScreenOn"))
-                                                result = true;
-                                        } else if (triggerName.equals("SMSreceiver")) {
-                                            if (BrodcastInfo.equals("SMSreceiver"))
-                                                result = true;
-                                        } else if (triggerName.equals("NewOutgoingCall")) {
-                                            if (BrodcastInfo.equals("NewOutgoingCall"))
-                                                result = true;
-                                        } else if (triggerName.equals("PhoneReception")) {
-                                            if (BrodcastInfo.equals("PhoneReception"))
-                                                result = true;
                                         } else if (triggerName.equals("PowerConnected")) {
-
                                             int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
                                             boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                                                     status == BatteryManager.BATTERY_STATUS_FULL;
-
                                             if (isCharging)
                                                 result = true;
                                         } else if (triggerName.equals("PowerDisConnected")) {
                                             int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
                                             boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                                                     status == BatteryManager.BATTERY_STATUS_FULL;
-
                                             if (!isCharging)
                                                 result = true;
                                         } else if (triggerName.equals("EarphoneIn")) {
@@ -363,34 +341,59 @@ public class CheckPlan extends Service {
                                         } else if (triggerName.equals("EarphoneOut")) {
                                             if (!aManager.isWiredHeadsetOn())
                                                 result = true;
+                                        } else if (triggerName.equals("Time")) {
+                                            if (BrodcastInfo.contains("Time")) {
+                                                StringTokenizer st = new StringTokenizer(triggerNInfo, "+");
+                                                st.nextToken();
+
+                                                Long currentTime = System.currentTimeMillis();
+                                                Log.d(MainActivity.TAG, "현제 시간 " +currentTime );
+
+                                                Long alarm = Long.valueOf(st.nextToken()).longValue();
+                                                if( alarm < currentTime && currentTime < alarm+900 )
+                                                    result = true;
+                                            }
+                                        } else if (triggerName.equals("ScreenOff")) {
+                                            if (BrodcastInfo.contains("ScreenOff"))
+                                                result = true;
+                                        } else if (triggerName.equals("ScreenOn")) {
+                                            if (BrodcastInfo.contains("ScreenOn"))
+                                                result = true;
+                                        } else if (triggerName.equals("SMSreceiver")) {
+                                            if (BrodcastInfo.contains("SMSreceiver"))
+                                                result = true;
+                                        } else if (triggerName.equals("NewOutgoingCall")) {
+                                            if (BrodcastInfo.contains("NewOutgoingCall"))
+                                                result = true;
+                                        } else if (triggerName.equals("CallReception")) {
+                                            if (BrodcastInfo.contains("CallReception"))
+                                                result = true;
                                         } else if (triggerName.equals("SensorLR")) {
-                                            if (BrodcastInfo.equals("SensorLR"))
+                                            if (BrodcastInfo.contains("SensorLR"))
                                                 result = true;
                                         } else if (triggerName.equals("UpsideDown")) {
-                                            if (BrodcastInfo.equals("UpsideDown"))
+                                            if (BrodcastInfo.contains("UpsideDown"))
                                                 result = true;
                                         } else if (triggerName.equals("SensorBright")) {
-                                            if (BrodcastInfo.equals("SensorBright"))
+                                            if (BrodcastInfo.contains("SensorBright"))
                                                 result = true;
 
                                         } else if (triggerName.equals("SensorUPDOWN")) {
-                                            if (BrodcastInfo.equals("SensorUPDOWN"))
+                                            if (BrodcastInfo.contains("SensorUPDOWN"))
                                                 result = true;
                                         } else if (triggerName.equals("SensorClose")) {
-                                            if (BrodcastInfo.equals("SensorClose"))
+                                            if (BrodcastInfo.contains("SensorClose"))
                                                 result = true;
                                         } else if (triggerName.equals("SensorBright")) {
-                                            if (BrodcastInfo.equals("SensorBright"))
+                                            if (BrodcastInfo.contains("SensorBright"))
                                                 result = true;
                                         }
-
                                     } catch (Exception e) {
                                         e.getStackTrace();
                                     }}}}}}}
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return result;
     }
 
@@ -401,28 +404,19 @@ public class CheckPlan extends Service {
         String strNow = sdfNow.format(date);
 
         try {
-            //플랜의 추가정보(활성화여부, 기록) 저장을 위한 데이터베이스
-//            DBHelperForRecordTime dbHelperForInfo = new DBHelperForRecordTime((getApplicationContext()));
-//            SQLiteDatabase databaseForInfo = dbHelperForInfo.getWritableDatabase();
-
             if( MainActivity.databaseForRecordTime != null) {
-                //db에 저장한 시간 로그로 확인
                 MainActivity.databaseForRecordTime.execSQL("INSERT INTO " +
                         "RecordTimeTable(planName, recordTime)" +
                         " VALUES ('" + planName + "', '" + strNow + "');");
-
                 Cursor cursor = MainActivity.databaseForRecordTime.rawQuery("SELECT * FROM RecordTimeTable", null);
-
                 try {
                     if (cursor != null) {
                         for (int i = 0; i < cursor.getCount(); i++) {
                             if (cursor.moveToNext()) {
-
                                 int _idDB = cursor.getInt(0);
                                 String planNameDBInfo = cursor.getString(1);
                                 String recordTimeDBInfo = cursor.getString(2);
-
-                                Log.d("PlanRecord", /*기록된게 많아지면 로그캣이 너무 많아지니까 태그 바꿈*/
+                                Log.d("Record", /*기록된게 많아지면 로그캣이 너무 많아지니까 태그 바꿈*/
                                         "INSERTED INTO TABLE \'RecordTimeTable\' - " +
                                                 " ID: " + _idDB +
                                                 " PLANNAME: " + planNameDBInfo +
@@ -433,7 +427,6 @@ public class CheckPlan extends Service {
                         cursor.close();
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -7,12 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
-import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.dahae.myandroiice.R;
@@ -27,20 +24,20 @@ public class TriggerForBattery extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_battery);
+        setContentView(R.layout.trigger_battery);
 
         IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         registerReceiver(mBatteryRecv, filter);
 
         editText_want = (EditText) findViewById(R.id.editText);
-        textView = (TextView) findViewById(R.id.textView);
+        textView = (TextView) findViewById(R.id.textViewSyntaxTrigger);
         inC_but = (Button) findViewById(R.id.buttonInc);
         deC_but = (Button) findViewById(R.id.buttonDec);
 
 
         editText_want.setText("50");
 
-        but = (Button) findViewById(R.id.button);
+        but = (Button) findViewById(R.id.buttonNewplan);
         but.setOnClickListener(new View.OnClickListener(){
            @Override
            public void onClick(View v) {

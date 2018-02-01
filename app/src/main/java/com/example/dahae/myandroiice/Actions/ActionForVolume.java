@@ -3,15 +3,10 @@ package com.example.dahae.myandroiice.Actions;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.example.dahae.myandroiice.R;
 
@@ -24,12 +19,12 @@ public class ActionForVolume extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_volume);
+        setContentView(R.layout.action_volume);
 
         AudioManager manager = (AudioManager) getSystemService(AUDIO_SERVICE);
         int currentVolumeMUSIC = manager.getStreamVolume(AudioManager.STREAM_MUSIC);
         int currentVolumeRING = manager.getStreamVolume(AudioManager.STREAM_RING);
-        but = (Button) findViewById(R.id.button);
+        but = (Button) findViewById(R.id.buttonNewplan);
         SB = (SeekBar) findViewById(R.id.seekBar);
 
         Intent intent = getIntent();

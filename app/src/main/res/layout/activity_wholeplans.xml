@@ -7,7 +7,8 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -15,14 +16,6 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:id="@+id/nameText"
             android:layout_marginLeft="10dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="명령"
-            android:id="@+id/textPlan"
-            android:padding="10dp" />
 
     </LinearLayout>
 
@@ -44,18 +37,25 @@
             android:groupIndicator="@null"/>
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="명령목록"
-        android:id="@+id/textPlans"
-        android:padding="10dp" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="5dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="계획 목록"
+            android:id="@+id/textPlans"
+            android:padding="10dp" />
+    </LinearLayout>
 
     <ListView
         android:id="@+id/wholePlanList"
         android:layout_width="wrap_content"
-        android:layout_height="270dp"
+        android:layout_height="wrap_content"
        />
 
 </LinearLayout>

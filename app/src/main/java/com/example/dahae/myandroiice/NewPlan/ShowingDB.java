@@ -1,11 +1,9 @@
 package com.example.dahae.myandroiice.NewPlan;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.example.dahae.myandroiice.MainActivity;
-import com.example.dahae.myandroiice.MainFunction.DBHelperForPlan;
 
 public class ShowingDB {
 
@@ -33,9 +31,9 @@ public class ShowingDB {
                                 String keyword_Info = cursor.getString(2);
                                 int keyword_level = cursor.getInt(3);
                                 Log.d(MainActivity.TAG, "* _idDB : " + _idDB +
-                                        " / keyword_level : " + keyword_level +
-                                        " / keyword : " + keyword +
-                                        " / keyword_Info : " + keyword_Info
+                                        " | keyword_level : " + keyword_level +
+                                        " | keyword : " + keyword +
+                                        " | keyword_Info : " + keyword_Info
                                 );
                             }}}}}
         } catch (Exception e) {

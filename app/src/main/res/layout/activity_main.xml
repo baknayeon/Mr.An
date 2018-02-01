@@ -1,41 +1,83 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:background="#ffffff">
 
-    <Button
-        android:layout_width="320dp"
-        android:layout_height="320dp"
-        android:id="@+id/ButtonActive"
-        android:background="@drawable/buta"
-        android:onClick="onButtonActivePlanClicked"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="10dp"
-        android:layout_alignParentRight="false"
-        android:layout_alignParentEnd="false" />
 
-    <Button
-        android:layout_width="170dp"
-        android:layout_height="170dp"
-        android:id="@+id/ButtonSleep"
-        android:background="@drawable/butw"
-        android:onClick="onButtonSleepingPlanClicked"
-        android:layout_below="@+id/ButtonActive"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp">
 
-    <Button
-        android:layout_width="170dp"
-        android:layout_height="170dp"
-        android:id="@+id/ButtonRecord"
-        android:background="@drawable/butr"
-        android:onClick="onButtonRecordClicked"
-        android:layout_alignTop="@+id/ButtonSleep"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonNewplan"
+                android:background="@drawable/anbisa_head"
+                android:layout_marginTop="15dp"
+            android:layout_gravity="center_horizontal" />
 
-</RelativeLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="새 부탁하기"
+            android:id="@+id/textView9"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="3dp" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:layout_width="170dp"
+            android:layout_height="170dp"
+            android:id="@+id/ButtonComplex"
+            android:background="@drawable/butg"
+            android:onClick="onButtonActivePlanClicked"
+            android:layout_gravity="center_vertical" />
+
+        <Button
+                android:layout_width="170dp"
+                android:layout_height="170dp"
+                android:id="@+id/ButtonSimple"
+                android:background="@drawable/buty"
+                android:onClick="onButtonSleepingPlanClicked"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true" />
+
+        <Button
+            android:layout_width="170dp"
+            android:layout_height="170dp"
+            android:id="@+id/ButtonRecord"
+            android:background="@drawable/butb"
+            android:onClick="onButtonRecordClicked"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="15dp">
+
+        </Button>
+
+        <Button
+            android:layout_width="170dp"
+            android:layout_height="170dp"
+            android:id="@+id/buttonHow"
+            android:background="@drawable/butgra"
+            android:onClick="onButtonHowToClicked"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_alignTop="@+id/ButtonRecord"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="15dp" />
+    </RelativeLayout>
+
+</LinearLayout>
+

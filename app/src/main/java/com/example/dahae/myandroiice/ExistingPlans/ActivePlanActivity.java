@@ -3,11 +3,9 @@ package com.example.dahae.myandroiice.ExistingPlans;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,20 +14,17 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.dahae.myandroiice.Adapter.PlanAdapter;
 import com.example.dahae.myandroiice.Adapter.PlanItem;
-import com.example.dahae.myandroiice.Adapter.PlanListAdapter;
-import com.example.dahae.myandroiice.Adapter.PlanListItem;
+import com.example.dahae.myandroiice.Adapter.KeywordAdapter;
+import com.example.dahae.myandroiice.CheckGrammer.NewPlanCheckAsSyntax;
 import com.example.dahae.myandroiice.MainActivity;
-import com.example.dahae.myandroiice.MainFunction.DBHelperForRecordTime;
-import com.example.dahae.myandroiice.MainFunction.DBHelperForPlan;
-import com.example.dahae.myandroiice.NewPlan.NewPlanCheck;
-import com.example.dahae.myandroiice.NewPlan.NewPlanMaking;
+import com.example.dahae.myandroiice.MainFunction.MyTrigger;
 import com.example.dahae.myandroiice.R;
 
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 public class ActivePlanActivity  extends AppCompatActivity {
 
@@ -38,15 +33,11 @@ public class ActivePlanActivity  extends AppCompatActivity {
     ListView wholePlanListView;
 
     ArrayList<PlanItem> planList = new ArrayList<>();
-
-    PlanListAdapter subAdapterForTrigger = new PlanListAdapter(getApplication());
-    PlanListAdapter subAdapterForAction = new PlanListAdapter(getApplication());
-
     TextView planName;
 
-    NewPlanCheck newPlanCheck = new NewPlanCheck();
-    ChangeName changeName = new  ChangeName();
-    SubActivity subActivity = new SubActivity();
+    NewPlanCheckAsSyntax newPlanCheck = new NewPlanCheckAsSyntax();
+
+    SubFuntion subFuntion = new SubFuntion();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +58,7 @@ public class ActivePlanActivity  extends AppCompatActivity {
 
     public void displayListView(){
 
-        planList = subActivity.getdisplayListInTrue();
+        planList = subFuntion.getdisplayListInTrue();
         PlanAdapter planAdapter = new PlanAdapter(this, planList);
         wholePlanListView.setAdapter(planAdapter);
     }
@@ -97,7 +88,7 @@ public class ActivePlanActivity  extends AppCompatActivity {
 
                         case R.id.delete:
 
-                            subActivity.deletePlan(listViewName);
+                            subFuntion.deletePlan(listViewName);
                             planName.setText(null);
                             displayListView();
                             setSubAdapter(null);
@@ -108,8 +99,8 @@ public class ActivePlanActivity  extends AppCompatActivity {
                             String oldName = listViewName;
                             String newName = listViewName.concat("_복사본");
 
-                            if (newPlanCheck.NoSameName(newName)) {
-                                subActivity.copyPlanAsTrue(oldName);
+                            if (newPlanCheck.NoSameName(newName) == 1) {
+                                subFuntion.copyPlanAsTrue(oldName);
                                 displayListView();
                                 setSubAdapter(newName);
                                 planName.setText(newName);
@@ -129,9 +120,13 @@ public class ActivePlanActivity  extends AppCompatActivity {
                             alert.setPositiveButton("저장", new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int whichButton) {
                                     String newName = input.getText().toString();
-                                    if (newPlanCheck.NoSameName(newName)) {
-                                        subActivity.changePlanName( listViewName, newName);
+                                    int checkName = newPlanCheck.NoSameName(newName);
+
+                                    if (checkName == 1) {
+                                        subFuntion.changePlanName( listViewName, newName);
                                         displayListView();
+                                    }else if (checkName == 0) {
+                                        Toast.makeText(getApplicationContext(), "같은 이름의 부탁이 있습니다.", Toast.LENGTH_LONG);
                                     }
                                 }
                             });
@@ -169,38 +164,12 @@ public class ActivePlanActivity  extends AppCompatActivity {
 
     public void setSubAdapter(String listViewName){
 
-        subAdapterForAction = new PlanListAdapter(this);
-        subAdapterForTrigger = new PlanListAdapter(this);
+        KeywordAdapter subAdapterForTrigger = new KeywordAdapter(getApplicationContext());
+        KeywordAdapter subAdapterForAction = new KeywordAdapter(getApplicationContext());
 
-        if(listViewName != null) {
-            Cursor cursorT = MainActivity.database.rawQuery("SELECT * FROM " + listViewName, null);
-            Cursor cursorA = MainActivity.database.rawQuery("SELECT * FROM " + listViewName, null);
-            try {
-                if (MainActivity.database != null) {
-                    if (cursorT != null && cursorT.getCount() != 0) {
-                        while (cursorT.moveToNext()) {
-                            String trigger = cursorT.getString(1);
-                            if (trigger == null || trigger.equals(""))
-                                ;
-                            else {
-                                if (!trigger.equals("End")){// && !trigger.equals("Done")) {
-                                    subAdapterForTrigger.addItem(new PlanListItem(changeName.Trigger(trigger)));//고쳐
-                                }
-                            }
-                        }
-                        cursorA.moveToLast();
-                        String action = cursorA.getString(1);
-                        StringTokenizer st = new StringTokenizer(action, "/");
-                        while (st.hasMoreTokens()) {
-                            subAdapterForAction.addItem(new PlanListItem(changeName.Action(st.nextToken())));//고쳐
-                        }
-                    }
-                }
-            } finally {
-                cursorT.close();
-                cursorA.close();
-            }
-        }
+        subAdapterForTrigger = subFuntion.getSubItemOfTrigger(subAdapterForTrigger, listViewName);
+        subAdapterForAction = subFuntion.getSubItemOfAction(subAdapterForAction, listViewName);
+
         subPlanListViewForTrigger.setAdapter(subAdapterForTrigger);
         subPlanListViewForAction.setAdapter(subAdapterForAction);
     }
@@ -211,10 +180,9 @@ public class ActivePlanActivity  extends AppCompatActivity {
         displayListView();
     }
 
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_active_plan, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
@@ -224,13 +192,19 @@ public class ActivePlanActivity  extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
+        Intent Mytrigger = new Intent(getApplicationContext(), MyTrigger.class);
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+
+        if (id == R.id.action_start_service) {
+
+            Log.d(MainActivity.TAG, "ReStart");
+            startService(Mytrigger);
             return true;
-        } else if (id == R.id.action_new){    //액션바 "NEW"버튼 (새 플랜 만들기)
-            Intent intentPlusButton = new Intent(getApplicationContext(), NewPlanMaking.class);
-            startActivity(intentPlusButton);
+
+        } else if (id == R.id.action_stop_service) {
+
+            Log.d(MainActivity.TAG, "Stop");
+            stopService(Mytrigger);
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -1,4 +1,4 @@
-package com.example.dahae.myandroiice.Actions;
+﻿package com.example.dahae.myandroiice.Actions;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,7 +23,7 @@ public class ActionForCamera extends Activity  {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_camare);
+        setContentView(R.layout.action_camare);
 
         mSurface = (ActionForCameraSurface)findViewById(R.id.preview);
         Timer timer = new Timer();
